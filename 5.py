@@ -29,23 +29,30 @@ for line in sys.stdin:
     conversions[i].source.append(int(src))
     conversions[i].range.append(int(r))
 
-# for convert in conversions:
-#     for i in range(len(convert.source)):
-#         print(convert.destination[i], convert.source[i], convert.range[i])
-#     print()
 
-locations = []
-for seed in seeds:
-    loc = seed
-    for convert in conversions:
-        for i in range(len(convert.source)):
-            r = range(convert.source[i], convert.source[i] + convert.range[i], 1)
-            if loc in r:
-                loc = convert.destination[i] + r.index(loc)
-                break
-    locations.append(loc)
+for convert in conversions:
+    sdr = zip(convert.source, convert.destination, convert.range)
+    sdr = sorted(sdr)
+    convert.source = [x[0] for x in sdr]
+    convert.destination = [x[1] for x in sdr]
+    convert.range = [x[2] for x in sdr]
 
-print(min(locations))
+    # for i in range(len(convert.source)):
+    #     print(convert.destination[i], convert.source[i], convert.range[i])
+    # print()
+
+# locations = []
+# for seed in seeds:
+#     loc = seed
+#     for convert in conversions:
+#         for i in range(len(convert.source)):
+#             r = range(convert.source[i], convert.source[i] + convert.range[i], 1)
+#             if loc in r:
+#                 loc = convert.destination[i] + r.index(loc)
+#                 break
+#     locations.append(loc)
+
+# print(min(locations))
 
 # Part 5b
 
@@ -56,6 +63,7 @@ class MarkedRanges:
         self.marked = False
 
 
+count = 0
 locations = []
 for j, seed in enumerate(seeds):
     if j % 2 == 0:
@@ -70,6 +78,9 @@ for j, seed in enumerate(seeds):
                 intersection = range(
                     max(r[0], curr_range.range[0]), min(r[-1], curr_range.range[-1]) + 1
                 )
+                count += 1
+                if count % 10000000 == 0:
+                    print(count)
                 if len(intersection) > 0:
                     curr_range.marked = True
                     min_curr = curr_range.range[0]
@@ -90,12 +101,13 @@ for j, seed in enumerate(seeds):
                         )
                     )
 
-        filtered_seeds = list(filter(lambda x: not x.marked, curr_seeds))
-        curr_seeds = [MarkedRanges(x) for x in new_seeds] + filtered_seeds
+            filtered_seeds = list(filter(lambda x: not x.marked, curr_seeds))
+            curr_seeds = [MarkedRanges(x) for x in new_seeds] + filtered_seeds
 
     locations.append(min([x.range[0] for x in curr_seeds]))
+    print(locations)
 
-print(min(locations))
+print(sorted(locations))
 
 # if min_r == 0 and max_r == 7716721:
 #     print()
@@ -109,3 +121,31 @@ print(min(locations))
 #     )
 #     print(curr_range.range, r, intersection)
 #     print(one, two)
+
+
+# final = []
+# counter = 0
+# for j, place in enumerate(seeds):
+#     if j % 2 == 0:
+#         curr_seeds = [*range(place, place + seeds[j + 1])]
+#     else:
+#         continue
+#     for convert in conversions:
+#         for i in range(len(convert.source)):
+#             for k in range(len(curr_seeds)):
+#                 if (
+#                     convert.source[i]
+#                     <= curr_seeds[k]
+#                     < convert.source[i] + convert.range[i]
+#                 ):
+#                     curr_seeds[k] = convert.destination[i] + (
+#                         curr_seeds[k] - convert.source[i]
+#                     )
+#                 elif curr_seeds[k] < convert.source[i]:
+#                     k = convert.source[i]
+#                 else:
+#                     break
+#             curr_seeds = sorted(curr_seeds)
+#     final.append(min(curr_seeds))
+#     print(final)
+# print(min(final))
