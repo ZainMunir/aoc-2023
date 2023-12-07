@@ -4,8 +4,7 @@ from enum import Enum
 from collections import Counter
 from functools import cmp_to_key, total_ordering
 import operator
-
-Val = Enum("Val", ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"])
+from copy import copy
 
 
 @total_ordering
@@ -30,6 +29,25 @@ class Val(Enum):
         return NotImplemented
 
 
+num_to_val = dict(
+    {
+        "A": Val.A,
+        "K": Val.K,
+        "Q": Val.Q,
+        "J": Val.J,
+        "T": Val.T,
+        "9": Val.NINE,
+        "8": Val.EIGHT,
+        "7": Val.SEVEN,
+        "6": Val.SIX,
+        "5": Val.FIVE,
+        "4": Val.FOUR,
+        "3": Val.THREE,
+        "2": Val.TWO,
+    }
+)
+
+
 class Card:
     def __init__(self, chars, vals, bid):
         self.chars = chars
@@ -49,74 +67,35 @@ for line in sys.stdin:
     bid = vals.pop()
     valEnums = []
     for char in vals[0]:
-        if char == "A":
-            valEnums.append(Val.A)
-        elif char == "K":
-            valEnums.append(Val.K)
-        elif char == "Q":
-            valEnums.append(Val.Q)
-        elif char == "J":
-            valEnums.append(Val.J)
-        elif char == "T":
-            valEnums.append(Val.T)
-        elif char == "9":
-            valEnums.append(Val.NINE)
-        elif char == "8":
-            valEnums.append(Val.EIGHT)
-        elif char == "7":
-            valEnums.append(Val.SEVEN)
-        elif char == "6":
-            valEnums.append(Val.SIX)
-        elif char == "5":
-            valEnums.append(Val.FIVE)
-        elif char == "4":
-            valEnums.append(Val.FOUR)
-        elif char == "3":
-            valEnums.append(Val.THREE)
-        elif char == "2":
-            valEnums.append(Val.TWO)
-
+        valEnums.append(num_to_val.get(char))
     cards.append(Card(vals[0], valEnums, bid))
 
-# for card in cards:
-#     print(card.vals, card.bid, card.counter)
+
+def get_better(counter):
+    if len(counter) == 1:
+        return counter.items()
+    elif Val.J in counter:
+        j_num = counter.pop(Val.J)
+        max_val = max(counter.items(), key=operator.itemgetter(1))[0]
+        counter[max_val] = counter.get(max_val) + j_num
+        return sorted(counter.items(), key=lambda x: x[1], reverse=True)
+    else:
+        return sorted(counter.items(), key=lambda x: x[1], reverse=True)
 
 
 def compare(a, b):
-    sorted_a = sorted(a.counter.items(), key=operator.itemgetter(1), reverse=True)
-    sorted_b = sorted(b.counter.items(), key=operator.itemgetter(1), reverse=True)
+    best_a = get_better(copy(a.counter))
+    best_b = get_better(copy(b.counter))
 
-    aJ = False
-    bJ = False
-
-    condA = sorted_a[0][1] + (a.counter.get(Val.J, 0) if sorted_a[0][0] != Val.J else 0)
-    condB = sorted_b[0][1] + (b.counter.get(Val.J, 0) if sorted_b[0][0] != Val.J else 0)
-
-    if condA > sorted_a[0][1]:
-        aJ = True
-    if condB > sorted_b[0][1]:
-        bJ = True
-
-    if condA > condB:
+    if max([x[1] for x in best_a]) > max([x[1] for x in best_b]):
         return 1
-    elif condA < condB:
+    elif max([x[1] for x in best_a]) < max([x[1] for x in best_b]):
         return -1
 
-    if len(sorted_a) != 1 and len(sorted_b) != 1:
-        condA = sorted_a[1][1] + (
-            a.counter.get(Val.J, 0)
-            if sorted_a[1][0] != Val.J and sorted_a[0][0] != Val.J and not aJ
-            else 0
-        )
-        condB = sorted_b[1][1] + (
-            b.counter.get(Val.J, 0)
-            if sorted_b[1][0] != Val.J and sorted_b[0][0] != Val.J and not bJ
-            else 0
-        )
-
-        if condA > condB:
+    if len(best_a) != 1:
+        if best_a[1][1] > best_b[1][1]:
             return 1
-        elif condA < condB:
+        elif best_a[1][1] < best_b[1][1]:
             return -1
 
     for i, valA in enumerate(a.vals):
@@ -128,10 +107,9 @@ def compare(a, b):
 
 
 sorted_cards = sorted(cards, key=cmp_to_key(compare))
-# print()
 total = 0
 for i, card in enumerate(sorted_cards):
-    print(card.chars)
+    # print(card.chars)
     # print(card.counter)
     # print()
     total += (i + 1) * int(card.bid)
