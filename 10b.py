@@ -38,7 +38,6 @@ start_pos = (-1, -1)
 
 tiles = []
 
-ground_tiles = []
 for line in sys.stdin:
     line = line.rstrip()
     line = line.replace("\ufeff", "")
@@ -50,8 +49,6 @@ for line in sys.stdin:
             start_pos = (len(tiles) - 1, i)
         (north, east, south, west) = pipes[c]
         tiles[-1].append(Pipe(north, east, south, west, c))
-        if c == ".":
-            ground_tiles.append((len(tiles) - 1, i))
 
 rows = len(tiles)
 cols = len(tiles[0])
@@ -136,16 +133,22 @@ while len(queue) > 0:
 
 #     print()
 
-print(len(ground_tiles))
+ground_tiles = []
+for y, row in enumerate(tiles):
+    for x, tile in enumerate(row):
+        if tile.distance == -1:
+            ground_tiles.append((y, x))
+
+# print(len(ground_tiles))
 total = 0
 for y, x in ground_tiles:
     curr_tile = tiles[y][x]
     winding_num = 0
     for i in range(0, y):
         if tiles[i][x].distance != -1:
-            if tiles[i][x].north and tiles[i][x].south:
-                continue
-            winding_num += 1
+            match tiles[i][x].char:
+                case "-" | "F" | "L":
+                    winding_num += 1
 
     if winding_num % 2 == 1:
         tiles[y][x].contained = True
