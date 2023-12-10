@@ -1,4 +1,5 @@
 import sys
+import copy
 
 # https://en.wikipedia.org/wiki/Jordan_curve_theorem
 
@@ -14,6 +15,25 @@ class Pipe:
         self.char = char
 
 
+pipes = {
+    "S": (False, False, False, False),
+    "|": (True, False, True, False),
+    "-": (False, True, False, True),
+    "L": (True, True, False, False),
+    "J": (True, False, False, True),
+    "7": (False, False, True, True),
+    "F": (False, True, True, False),
+    ".": (False, False, False, False),
+}
+opp_pipes = {
+    (True, False, True, False): "|",
+    (False, True, False, True): "-",
+    (True, True, False, False): "L",
+    (True, False, False, True): "J",
+    (False, False, True, True): "7",
+    (False, True, True, False): "F",
+}
+
 start_pos = (-1, -1)
 
 tiles = []
@@ -26,25 +46,12 @@ for line in sys.stdin:
         continue
     tiles.append([])
     for i, c in enumerate(line):
-        match c:
-            case "S":
-                start_pos = (len(tiles) - 1, i)
-                tiles[-1].append(Pipe(False, False, False, False, c))
-            case "|":
-                tiles[-1].append(Pipe(True, False, True, False, c))
-            case "-":
-                tiles[-1].append(Pipe(False, True, False, True, c))
-            case "L":
-                tiles[-1].append(Pipe(True, True, False, False, c))
-            case "J":
-                tiles[-1].append(Pipe(True, False, False, True, c))
-            case "7":
-                tiles[-1].append(Pipe(False, False, True, True, c))
-            case "F":
-                tiles[-1].append(Pipe(False, True, True, False, c))
-            case ".":
-                tiles[-1].append(Pipe(False, False, False, False, c))
-                ground_tiles.append((len(tiles) - 1, i))
+        if c == "S":
+            start_pos = (len(tiles) - 1, i)
+        (north, east, south, west) = pipes[c]
+        tiles[-1].append(Pipe(north, east, south, west, c))
+        if c == ".":
+            ground_tiles.append((len(tiles) - 1, i))
 
 rows = len(tiles)
 cols = len(tiles[0])
@@ -82,6 +89,10 @@ while len(queue) > 0:
                 queue.append((y, x - 1))
                 tiles[y][x - 1].distance = new_distance
                 tiles[y][x].west = True
+        curr_tile.char = opp_pipes[
+            (curr_tile.north, curr_tile.east, curr_tile.south, curr_tile.west)
+        ]
+        print(curr_tile.char)
     else:
         if y - 1 >= 0:
             if (
@@ -119,54 +130,26 @@ while len(queue) > 0:
 # for row in tiles:
 #     for tile in row:
 #         if tile.distance == -1:
-#             print(".", end="  ")
+#             print("  .  ", end=" ")
 #         else:
-#             print(tile.distance, end=" ")
+#             print(f"{tile.distance:05d}", end=" ")
+
 #     print()
-
-
-def adjacent(y, x):
-    adj = []
-    if tiles[y][x].north:
-        if y - 1 >= 0:
-            adj.append((y - 1, x))
-    if tiles[y][x].east:
-        if x + 1 < cols:
-            adj.append((y, x + 1))
-    if tiles[y][x].south:
-        if y + 1 < rows:
-            adj.append((y + 1, x))
-    if tiles[y][x].west:
-        if x - 1 >= 0:
-            adj.append((y, x - 1))
-    if len(adj) == 0:
-        if y - 1 >= 0:
-            adj.append((y - 1, x))
-        if x + 1 < cols:
-            adj.append((y, x + 1))
-        if y + 1 < rows:
-            adj.append((y + 1, x))
-        if x - 1 >= 0:
-            adj.append((y, x - 1))
-    return adj
-
 
 print(len(ground_tiles))
 total = 0
 for y, x in ground_tiles:
     curr_tile = tiles[y][x]
     winding_num = 0
-    right_angles = 0
     for i in range(0, y):
         if tiles[i][x].distance != -1:
             if tiles[i][x].north and tiles[i][x].south:
                 continue
             winding_num += 1
+
     if winding_num % 2 == 1:
         tiles[y][x].contained = True
-        print(y, x)
+        # print(y, x)
         total += 1
-        continue
-
 
 print(total)
