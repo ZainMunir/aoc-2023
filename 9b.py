@@ -1,4 +1,3 @@
-import re
 import sys
 from itertools import groupby
 
