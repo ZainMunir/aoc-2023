@@ -1,5 +1,4 @@
 import sys
-import copy
 
 # https://en.wikipedia.org/wiki/Jordan_curve_theorem
 
