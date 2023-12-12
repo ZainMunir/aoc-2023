@@ -2,6 +2,7 @@ import sys
 import re
 import copy
 import math
+import functools
 
 
 class SpringLine:
@@ -24,49 +25,70 @@ for line in sys.stdin:
     all_springs.append(SpringLine(springs, nums))
 
 
-def check_line(spring_line):
-    springs = spring_line.springs
-    config = spring_line.config
+def check_line(springs, config):
     groups = "".join(springs).split(".")
     hash_counts = [group.count("#") for group in groups if group.count("#") > 0]
     return hash_counts == config
 
 
-def make_configs(springLine, curr_spring):
-    new = copy.deepcopy(springLine)
-    springs_1 = new.springs
-    springs_2 = copy.copy(new.springs)
-    config = new.config
-    if "?" not in springs_1:
-        if "".join(springs_1) in handled_combos:
-            return 0
-        handled_combos.append("".join(springs_1))
-        return_val = check_line(new)
-        # if return_val:
-        #     print(handled_combos[-1], config)
-        return return_val
+def make_configs(springs, config, curr_spring, group_index=0, group_count=0):
+    global iter
+    iter += 1
 
-    for i in range(curr_spring, len(springs_1)):
-        if springs_1[i] == "?":
-            if "".join(springs_1) in handled_combos:
-                return 0
-            handled_combos.append("".join(springs_1))
-            springs_1[i] = "#"
-            springs_2[i] = "."
-            return make_configs(SpringLine(springs_1, config), i + 1) + make_configs(
-                SpringLine(springs_2, config), i + 1
-            )
+    count = 0
+    if "?" not in springs:
+        if "".join(springs) not in handled_combos:
+            handled_combos.add("".join(springs))
+            count = check_line(springs, config)
+    else:
+        for i in range(curr_spring, len(springs)):
+            if springs[i] == "#":
+                count += make_configs(
+                    springs, config, i + 1, group_index, group_count + 1
+                )
+            elif springs[i] == ".":
+                if group_index == len(config):
+                    count += make_configs(springs, config, i + 1, group_index)
+                elif group_count == config[group_index]:
+                    count += make_configs(springs, config, i + 1, group_index + 1)
+                elif group_count != 0:
+                    count += make_configs(springs, config, i + 1, group_index + 1)
+            elif springs[i] == "?":
+                if group_index == len(config):
+                    springs[i] = "."
+                    count += make_configs(springs, config, i + 1, group_index)
+                    springs[i] = "?"
+                elif group_count == config[group_index]:
+                    springs[i] = "."
+                    count += make_configs(springs, config, i + 1, group_index + 1)
+                    springs[i] = "?"
+                elif group_count != 0:
+                    springs[i] = "#"
+                    count += make_configs(
+                        springs, config, i + 1, group_index, group_count + 1
+                    )
+                    springs[i] = "."
+                    count += make_configs(springs, config, i + 1, group_index + 1)
+                    springs[i] = "?"
+                else:
+                    springs[i] = "#"
+                    count += make_configs(
+                        springs, config, i + 1, group_index, group_count + 1
+                    )
+                    springs[i] = "."
+                    count += make_configs(springs, config, i + 1, group_index)
+                    springs[i] = "?"
+                break
+    return count
 
 
 total = 0
 for spring in all_springs:
-    handled_combos = []
-    handled_potential_combos = []
-    # print(check_line(spring))
-    print(math.pow(2, spring.springs.count("?")))
-    val = make_configs(spring, 0)
+    handled_combos = set()
+    iter = 0
+    print(math.pow(4, spring.springs.count("?")))
+    handled_combos = set()
+    val = make_configs(spring.springs, spring.config, 0)
     total += val
-    print(val)
-
+    print(val, total, spring.config)
 print(total)
-# 52 + answer
