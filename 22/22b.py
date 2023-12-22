@@ -1,8 +1,4 @@
 import sys
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from itertools import cycle
-from matplotlib.lines import Line2D
 
 
 class Brick:
@@ -91,53 +87,24 @@ for key, brick in bricks_sorted:
     place_brick(brick)
 
 
-removable = 0
+def find_effect(brick, cascade):
+    cascade.add(brick.id)
+    queue = set()
+    queue.add(brick.id)
+
+    while len(queue) > 0:
+        id = queue.pop()
+        for supporting in bricks[id].supporting:
+            if bricks[supporting].on_top_of.issubset(cascade):
+                queue.add(supporting)
+                cascade.add(supporting)
+
+    return len(cascade) - 1  # don't count the brick itself
+
+
+total = 0
+brick_effects = {}
 for key, brick in bricks.items():
-    # print(brick.id, brick.left, brick.right, brick.supporting, brick.on_top_of)
-    if len(brick.supporting) == 0:
-        removable += 1
-        # print(brick.id, brick.left, brick.right)
-        continue
-    can_remove = True
-    for supporting in brick.supporting:
-        if len(bricks[supporting].on_top_of) <= 1:
-            can_remove = False
-            break
-    if can_remove:
-        removable += 1
-        # print(brick.id, brick.left, brick.right)
-print(removable)
-
-
-# Visualizing - very bad for actual input
-exit()
-
-unique_groups = set(point[3] for point in placed_brick_points)
-
-color_cycle = cycle(plt.cm.tab10.colors)  # You can use any colormap here
-colors = {group: next(color_cycle) for group in unique_groups}
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-
-legend_elements = []
-
-for group in unique_groups:
-    bar = ax.bar3d(0, 0, 0, dx=0, dy=0, dz=0, color=colors[group])
-    legend_elements.append(
-        Line2D(
-            [0], [0], marker="s", color="w", label=group, markerfacecolor=colors[group]
-        )
-    )
-
-for x, y, z, group in placed_brick_points:
-    ax.bar3d(x, y, z, dx=1, dy=1, dz=1, color=colors[group])
-
-ax.legend(handles=legend_elements, loc="upper right")
-
-ax.set_xlabel("X Label")
-ax.set_ylabel("Y Label")
-ax.set_zlabel("Z Label")
-ax.set_title("3D Bar Plot with Cubes and Legend")
-
-plt.show()
+    add = find_effect(brick, set())
+    total += add
+print(total)
